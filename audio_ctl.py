@@ -1,41 +1,31 @@
 from Tkinter import *
 import paho.mqtt.client as mqtt
 
-################################################
-#  Our application class definition
-################################################
-class Application(Frame):
-    def set_client(self, client):
-        self.client = client
+def send_color():
+  global time_color_slider
+  global client
 
-    def send_color(self):
-        color_str = str(self.time_color_slider.get())
-        client.publish("display/time/color", color_str)
-        print ("requesting time color "+color_str)
+  color_str = str(time_color_slider.get())
+  client.publish("display/time/color", color_str)
+  print ("requesting time color "+color_str)
 
-    def createWidgets(self):
-        self.QUIT = Button(self)
-        self.QUIT["text"] = "QUIT"
-        self.QUIT["fg"]   = "red"
-        self.QUIT["command"] =  self.quit
-        self.QUIT.grid(row=3,column=1,columnspan=3)
+my_window=Tk()
+my_window.title("Audio Display Controls")
 
-        self.time_color_label = Label(self,text="Color")
-        self.time_color_label.grid(row=1,column=1)
-        self.time_color_slider = Scale(self,from_=0, to=360, length=200, tickinterval=120,orient=HORIZONTAL)
-        self.time_color_slider.grid(row=1,column=2)
-        self.time_color_button = Button(self)
-        self.time_color_button["text"] = "Send"
-        self.time_color_button["command"] = self.send_color
-        self.time_color_button.grid(row=1,column=3)
-        self.time_color_indexes = Label(self, text="Red      Green     Blue        Red")
-        self.time_color_indexes.grid(row=2,column=2)
+frame_time_color=Frame(my_window)
 
+time_color_label = Label(frame_time_color,text="Color")
+time_color_label.grid(row=1,column=1)
+time_color_slider = Scale(frame_time_color,from_=0, to=360, length=200, tickinterval=120,orient=HORIZONTAL)
+time_color_slider.grid(row=1,column=2)
+time_color_button = Button(frame_time_color)
+time_color_button["text"] = "Send"
+time_color_button["command"] = send_color
+time_color_button.grid(row=1,column=3)
+time_color_indexes = Label(frame_time_color, text="Red      Green     Blue        Red")
+time_color_indexes.grid(row=2,column=2)
 
-    def __init__(self, master=None):
-        Frame.__init__(self, master)
-        self.pack()
-        self.createWidgets()
+frame_time_color.grid(row=0,column=0)
 
 #####################################################
 # Message callback for MQTT
@@ -56,10 +46,6 @@ def on_message(client, userdata, message):
 # Main code 
 #####################################################
 
-root = Tk()
-root.title("Audio Control")
-app = Application(master=root)
-
 broker_address = "10.0.0.17"
 #broker_address = "makerlabPi1"
 
@@ -73,8 +59,5 @@ except:
 client.loop_start()
 client.subscribe("ir_cam_display/value/#")
 
-app.set_client(client)
-
-app.mainloop()
-root.destroy()
+my_window.mainloop()
 
