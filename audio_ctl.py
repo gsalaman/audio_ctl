@@ -1,6 +1,7 @@
 from Tkinter import *
 import paho.mqtt.client as mqtt
 
+
 def send_color():
   global time_color_slider
   global client
@@ -63,9 +64,49 @@ def send_num_pts_per_bin():
   client.publish("display/freq/num_pts_per_bin", my_str)
   print ("requesting "+my_str+" points per bin")
 
+def calc_hz_per_bin():
+  if (pts_per_bin.get() == "?"):
+    hz_per_bin.set("?")
+  else:
+    pts_per_bin_int = int(pts_per_bin.get())
+    hz_per_bin_int = 43 * pts_per_bin_int
+    hz_per_bin.set(str(hz_per_bin_int))
+
+def calc_display_range():
+  if (hz_per_bin.get() == "?"):
+    display_range.set("?")
+  elif (num_bins.get() == "?"):
+    display_range.set("?")
+  else:
+    hz_per_bin_int = int(hz_per_bin.get())
+    num_bins_int = int(num_bins.get())
+    display_range_int = hz_per_bin_int * num_bins_int
+    display_range.set(str(display_range_int))
+     
+def refresh_num_pts_per_bin(payload):
+  pts_per_bin.set(payload)
+  print "local pts_per_bin: "+payload  
+  calc_hz_per_bin()
+  calc_display_range()
+
+def refresh_num_bins(payload):
+  num_bins.set(payload)
+  print "local num_bins: "+payload  
+  calc_display_range()
+
 ###############################################
 my_window=Tk()
 my_window.title("Audio Display Controls")
+pts_per_bin = StringVar()
+pts_per_bin.set("?")
+num_bins = StringVar()
+num_bins.set("?")
+hz_per_bin = StringVar()
+hz_per_bin.set("?")
+display_range = StringVar()
+display_range.set("?")
+
+
 
 frame_time=LabelFrame(my_window,text="Time Display adjustments")
 time_color_label = Label(frame_time,text="Color")
@@ -130,20 +171,39 @@ num_pts_per_bin_button = Button(frame_freq)
 num_pts_per_bin_button["text"] = "Send"
 num_pts_per_bin_button["command"] = send_num_pts_per_bin
 num_pts_per_bin_button.grid(row=2,column=4)
+
+pts_per_bin_text = Label(frame_freq, text="Pts per bin: ")
+pts_per_bin_text.grid(row=3,column=0)
+pts_per_bin_label = Label(frame_freq, textvariable=pts_per_bin)
+pts_per_bin_label.grid(row=3,column=1)
+
+num_bins_text = Label(frame_freq, text="num bins: ")
+num_bins_text.grid(row=3,column=2)
+num_bins_label = Label(frame_freq, textvariable=num_bins)
+num_bins_label.grid(row=3,column=3)
+
+hz_per_bin_text = Label(frame_freq, text="Hz per bin: ")
+hz_per_bin_text.grid(row=4,column=0)
+hz_per_bin_label = Label(frame_freq, textvariable=hz_per_bin)
+hz_per_bin_label.grid(row=4,column=1)
+
+freq_range_text = Label(frame_freq, text="Total Frequency Range: ")
+freq_range_text.grid(row=4, column=2)
+freq_range_label = Label(frame_freq, textvariable=display_range)
+freq_range_label.grid(row=4,column=3)
+
 frame_freq.grid(row=1,column=0)
 
 #####################################################
 # Message callback for MQTT
 #####################################################
 def on_message(client, userdata, message):
-  global app
-
   #print "CALLBACK"
 
-  if message.topic == "ir_cam_display/value/low_temp":
-    app.refresh_cold_bound(message.payload)
-  elif message.topic == "ir_cam_display/value/high_temp":
-    app.refresh_hot_bound(message.payload)
+  if message.topic == "display/freq/num_pts_per_bin":
+    refresh_num_pts_per_bin(message.payload)
+  elif message.topic == "display/freq/num_bins":
+    refresh_num_bins(message.payload)
   else:
     print "Unhandled message topic: ",message.topic
 
@@ -162,7 +222,8 @@ except:
   print "Unable to connect to MQTT broker"
   exit(0)
 client.loop_start()
-client.subscribe("ir_cam_display/value/#")
+client.subscribe("display/freq/num_bins")
+client.subscribe("display/freq/num_pts_per_bin")
 
 my_window.mainloop()
 
