@@ -1,6 +1,10 @@
-from Tkinter import *
+from __future__ import print_function
 import paho.mqtt.client as mqtt
 
+try:
+    from Tkinter import *
+except ImportError:
+    from tkinter import *
 
 def send_color():
   global time_color_slider
@@ -41,12 +45,12 @@ def y_zoom_out():
 def freq_mag_zoom_in():
   global client
   client.publish("display/freq/y_ctl", "+")
-  print "zoom in on freq magnitude"
+  print ("zoom in on freq magnitude")
 
 def freq_mag_zoom_out():
   global client
   client.publish("display/freq/y_ctl", "-")
-  print "zoom out on frequency magnitude"
+  print ("zoom out on frequency magnitude")
 
 def send_pixels_per_bin():
   global pixels_per_bin_slider
@@ -85,13 +89,13 @@ def calc_display_range():
      
 def refresh_num_pts_per_bin(payload):
   pts_per_bin.set(payload)
-  print "local pts_per_bin: "+payload  
+  print ("local pts_per_bin: "+payload) 
   calc_hz_per_bin()
   calc_display_range()
 
 def refresh_num_bins(payload):
   num_bins.set(payload)
-  print "local num_bins: "+payload  
+  print ("local num_bins: "+payload)  
   calc_display_range()
 
 ###############################################
@@ -205,7 +209,7 @@ def on_message(client, userdata, message):
   elif message.topic == "display/freq/num_bins":
     refresh_num_bins(message.payload)
   else:
-    print "Unhandled message topic: ",message.topic
+    print("Unhandled message topic: ",message.topic)
 
 #####################################################
 # Main code 
@@ -219,7 +223,7 @@ client.on_message = on_message
 try:
   client.connect(broker_address)
 except:
-  print "Unable to connect to MQTT broker"
+  print("Unable to connect to MQTT broker")
   exit(0)
 client.loop_start()
 client.subscribe("display/freq/num_bins")
